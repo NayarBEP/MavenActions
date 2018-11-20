@@ -23,6 +23,7 @@ public class Driver {
         driver = new ChromeDriver();
         return driver;
     }
+
     public static boolean Close(){
         try{
             driver.quit();

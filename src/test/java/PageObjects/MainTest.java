@@ -2,6 +2,10 @@ package PageObjects;
 
 import ConfigDriver.Driver;
 import Utils.CaptureScreenShot;
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import com.aventstack.extentreports.reporter.ExtentHtmlReporter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -16,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 import static org.testng.Assert.*;
 
@@ -23,21 +28,35 @@ public class MainTest {
 
     public static WebDriver driver = null;
 
-    public void setUp(){
+    public void setUp1(){
         driver = Driver.Chrome();
     }
 
-    public void setUpDown(){
+    ExtentReports reports;
+    ExtentTest testInfo;
+    ExtentHtmlReporter htmlReporter;
+
+    @BeforeTest
+    public void setUp(){
+        htmlReporter = new ExtentHtmlReporter(new File(System.getProperty("user.dir")+"/AutomationReports.html" ));
+        htmlReporter.loadXMLConfig(new File(System.getProperty("user.dir")+"/extent-config.xml"));
+        reports=new ExtentReports();
+        reports.setSystemInfo("Enviroment","QA");
+        reports.attachReporter(htmlReporter);
+    }
+
+
+    public void tearDown(){
         Boolean result = Driver.Close();
         System.out.println(result);
     }
 
     @Test
     public void main() {
-        setUp();
+        setUp1();
         driver.get("https://www.google.com/");
         System.out.println("Completed");
-        setUpDown();
+        tearDown();
 
     }
 
@@ -82,4 +101,30 @@ public class MainTest {
         cap.captureScreenShot(driver, "PhantomJsDriverExample2");
     }
 
+    @BeforeMethod
+    public void register(Method method){
+        String testName = method.getName();
+        testInfo=reports.createTest(testName);
+    }
+
+    @AfterMethod
+    public void captureStatus(ITestResult result){
+        if(result.getStatus()==ITestResult.SUCCESS){
+            testInfo.log(Status.PASS, "The test Method named as: "+result.getName()+" is passed");
+
+        }
+        else if(result.getStatus()==ITestResult.FAILURE){
+            testInfo.log(Status.PASS,"The Test Method named as :"+result.getName()+" is failed");
+            testInfo.log(Status.FAIL,"Test failure : "+result.getThrowable());
+        }
+        else if(result.getStatus()==ITestResult.SKIP){
+            testInfo.log(Status.PASS,"The Test Method named as : "+result.getName()+" is passed");
+
+        }
+    }
+
+    @AfterTest
+    public void cleanUp(){
+        reports.flush();
+    }
 }
